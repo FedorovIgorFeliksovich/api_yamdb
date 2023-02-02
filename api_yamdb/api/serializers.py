@@ -18,8 +18,8 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Review
-        fields = ('text', 'title', 'author', 'score', 'pub_date')
-        #Не вставил id, так как он не нужен пользователю при запросе
+        fields = ('id', 'text', 'title', 'author', 'score', 'pub_date')
+        
     def validate(self, data):
         request = self.context['request']
         author = request.user
@@ -45,5 +45,4 @@ class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = ('review', 'author', 'text', 'pub_date')
-        #Не вставил id, так как он не нужен пользователю при запросе
+        fields = ('id', 'review', 'author', 'text', 'pub_date')
