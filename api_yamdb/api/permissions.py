@@ -2,10 +2,10 @@ from rest_framework.permissions import SAFE_METHODS, BasePermission
 from users.models import UserRole
 
 
-class ReviewPermission(BasePermission):
+class AuthorOrAdminOrModeratorOrReadOnly(BasePermission):
     """
-    Предоставление прав доступа для авторов, администратора и модератора
-    на изменение отзывов и комментариев.
+    Предоставление прав доступа для авторов, модератора
+    и администратора на изменение отзывов и комментариев.
     """
     message = 'Изменение чужого контента запрещено!'
 
@@ -15,43 +15,25 @@ class ReviewPermission(BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return (request.method in SAFE_METHODS
-                or request.user.role == 'admin'
-                or request.user.role == 'moderator'
+                or (request.user.role in [UserRole.ADMIN, UserRole.MODERATOR])
                 or obj.author == request.user)
 
 
-class AuthorOrAdminOrModeratorOrReadOnly(BasePermission):
+class IsAdminOrIsSuperuserOrReadOnly(BasePermission):
     """
-    Права доступа для автора и аутентифицированного пользователя.
+    Права доступа для админа, суперюзера и только для чтения.
     """
+    message = 'Доступно только администратору'
 
-    def has_permission(self, request, view):
-        if request.method in SAFE_METHODS:
-            return True
-        return bool(request.user and request.user.is_authenticated)
-
-    def has_object_permission(self, request, view, obj):
-        if request.method in SAFE_METHODS:
-            return True
-
-        return (
-            obj.author == request.user
-            or (request.user.is_authenticated
-                and request.user.role in [UserRole.ADMIN, UserRole.MODERATOR]))
-
-
-class IsAdminOrReadOnly(BasePermission):
-    """
-    Права доступа для админа и только для чтения.
-    """
     def has_permission(self, request, view):
         return (
             request.method in SAFE_METHODS
-            or request.user.is_authenticated
-            and request.user.role == UserRole.ADMIN
+            or request.user.role == UserRole.ADMIN
+            or request.user.is_superuser
         )
 
 
+# пока только не понятно зачем все эти ограничения
 class IsAdmin(BasePermission):
     """
     Права доступа только для админа.
