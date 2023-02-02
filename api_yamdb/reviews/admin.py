@@ -10,6 +10,7 @@ class ReviewAdmin(admin.ModelAdmin):
     list_filter = ('title', 'score', 'pub_date')
     empty_value_display = '-пусто-'
 
+
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
     list_display = ('pk', 'author', 'review', 'text', 'pub_date',)
