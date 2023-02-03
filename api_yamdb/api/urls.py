@@ -6,7 +6,10 @@ from .views import (
     GenreViewSet,
     TitleViewSet,
     ReviewViewSet,
-    CommentViewSet
+    CommentViewSet,
+    UserViewSet,
+    SignUpViewSet,
+    access_token
 )
 
 app_name = 'api'
@@ -16,8 +19,6 @@ router_v1 = DefaultRouter()
 router_v1.register('titles', TitleViewSet, basename='titles')
 router_v1.register('categories', CategoryViewSet, basename='categories')
 router_v1.register('genres', GenreViewSet, basename='genres')
-
-
 router_v1.register(
     r'titles/(?P<title_id>\d+)/reviews',
     ReviewViewSet,
@@ -28,7 +29,10 @@ router_v1.register(
     CommentViewSet,
     basename='comments'
 )
+router_v1.register(r'users', UserViewSet, basename='users')
+router_v1.register(r'auth/signup', SignUpViewSet)
 
 urlpatterns = [
     path('', include(router_v1.urls)),
+    path('auth/token/', access_token, name='token'),
 ]

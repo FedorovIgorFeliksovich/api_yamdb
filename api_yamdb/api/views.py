@@ -1,14 +1,16 @@
-from rest_framework import viewsets, filters, mixins
+from rest_framework import viewsets, filters, mixins, permissions, status
 from rest_framework.generics import get_object_or_404
 from rest_framework.pagination import PageNumberPagination
-
-from reviews.models import Review, Title, Category, Genre
+from rest_framework.decorators import action, api_view
+from reviews.models import Review, Title, Category, Genre, User
 from .filters import TitleFilter
 from django_filters.rest_framework import DjangoFilterBackend
-
+from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
 from .permissions import (
-    AuthorOrAdminOrModeratorOrReadOnly,
-    IsAdminOrReadOnly,
+    IsAdminOrIsSuperuserTitleCategoryGenre,
+    AuthorOrAdminOrModeratorReviewComment,
+    IsAdminOrIsSuperuser
 )
 from .serializers import (
     CategorySerializer,
@@ -17,6 +19,10 @@ from .serializers import (
     GenreSerializer,
     TitleSerializerRead,
     TitleSerializerCreate,
+    AdminUserSerializer,
+    UserSerializer,
+    ConfirmationCodeSerializer,
+    AccessTokenSerializer
 )
 
 
@@ -33,7 +39,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     """Вьюсет для работы с произведениями."""
     queryset = Title.objects.all().order_by('name')
     serializer_class = TitleSerializerCreate
-    permission_classes = (IsAdminOrReadOnly,)
+    permission_classes = (IsAdminOrIsSuperuserTitleCategoryGenre,)
     pagination_class = PageNumberPagination
     # это настройки фильтрации, DjangoFilterBackend из устанавливаемой библиотеки
     # django-filter. подключение возможно как на уровне INSTALLED_APPS в settings.py
@@ -56,7 +62,7 @@ class CategoryViewSet(CreateDestroyViewSet):
     """Вьюсет для работы с категориями произведений."""
     queryset = Category.objects.all().order_by('name')
     serializer_class = CategorySerializer
-    permission_classes = (IsAdminOrReadOnly,)
+    permission_classes = (IsAdminOrIsSuperuserTitleCategoryGenre,)
     # Класс SearchFilter поддерживает простой поиск на основе одного параметра запроса
     # https://django.fun/ru/docs/django-rest-framework/3.12/api-guide/filtering/
     filter_backends = [filters.SearchFilter]
@@ -72,7 +78,7 @@ class GenreViewSet(CreateDestroyViewSet):
     # сразу сортируем по имени для удобства
     queryset = Genre.objects.all().order_by('name')
     serializer_class = GenreSerializer
-    permission_classes = (IsAdminOrReadOnly,)
+    permission_classes = (IsAdminOrIsSuperuserTitleCategoryGenre,)
     filter_backends = [filters.SearchFilter]
     search_fields = ['name']
     lookup_field = 'slug'
@@ -83,7 +89,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     # Указываем серилизатор с которым будет
     # работать вьюха
-    permission_classes = (AuthorOrAdminOrModeratorOrReadOnly,)
+    permission_classes = (AuthorOrAdminOrModeratorReviewComment,)
     # даю разрешения на основе Permission
     # авторизованным пользователям, а так же админу, суперпользователю и автору
 
@@ -101,7 +107,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     """Вьюсет для работы с комментариями."""
     serializer_class = CommentSerializer
-    permission_classes = (AuthorOrAdminOrModeratorOrReadOnly,)
+    permission_classes = (AuthorOrAdminOrModeratorReviewComment,)
     pagination_class = PageNumberPagination
 
     def get_queryset(self):
@@ -114,3 +120,76 @@ class CommentViewSet(viewsets.ModelViewSet):
             title=self.kwargs['title_id']
         )
         serializer.save(author=self.request.user, review=review)
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    """Работа с пользователями. Только для администратора."""
+    queryset = User.objects.all()
+    permission_classes = (
+        permissions.IsAuthenticated,
+        IsAdminOrIsSuperuser,
+    )
+    lookup_field = 'username'
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('username',)
+
+    def get_serializer_class(self):
+        if (
+            self.request.user.role != 'admin'
+            or self.request.user.is_superuser
+        ):
+            return UserSerializer
+        return AdminUserSerializer
+
+    @action(
+        detail=False,
+        url_path='me',
+        methods=['get', 'patch'],
+        permission_classes=(permissions.IsAuthenticated,),
+        queryset=User.objects.all()
+    )
+    def me(self, request):
+        """
+        Профиль пользователя. Можно редактировать.
+        Поле role редактирует только администратор.
+        """
+        user = get_object_or_404(User, id=request.user.id)
+        if request.method == 'PATCH':
+            serializer = UserSerializer(user, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        serializer = self.get_serializer(user, many=False)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class SignUpViewSet(mixins.CreateModelMixin,
+                    mixins.UpdateModelMixin,
+                    viewsets.GenericViewSet):
+    """Регистрация нового пользователя. Получение кода подтверждения."""
+    queryset = User.objects.all()
+    serializer_class = ConfirmationCodeSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+            headers=headers
+        )
+
+
+@api_view(http_method_names=['POST', ])
+def access_token(request):
+    """Выдает токен доступа для авторизации."""
+    serializer = AccessTokenSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    data = serializer.validated_data
+    user = get_object_or_404(User, **data)
+    refresh = RefreshToken.for_user(user)
+    return Response(
+        {'access': str(refresh.access_token)}, status=status.HTTP_201_CREATED
+    )

@@ -2,7 +2,24 @@ from rest_framework.permissions import SAFE_METHODS, BasePermission
 from users.models import UserRole
 
 
-class AuthorOrAdminOrModeratorOrReadOnly(BasePermission):
+class IsAdminOrIsSuperuserTitleCategoryGenre(BasePermission):
+    """
+    Предоставление прав доступа для администратора и супер юзера
+    на добавление и удаление категорий, жанров и произведений.
+    """
+    message = 'Доступно только администратору!'
+
+    def has_permission(self, request, view):
+        if request.method in SAFE_METHODS:
+            return True
+        if not request.user.is_authenticated:
+            return False
+        if request.user.role == 'admin' or request.user.is_superuser:
+            return True
+        return False
+
+
+class AuthorOrAdminOrModeratorReviewComment(BasePermission):
     """
     Предоставление прав доступа для авторов, модератора
     и администратора на изменение отзывов и комментариев.
@@ -19,54 +36,21 @@ class AuthorOrAdminOrModeratorOrReadOnly(BasePermission):
                 or obj.author == request.user)
 
 
-class IsAdminOrIsSuperuserOrReadOnly(BasePermission):
-    """
-    Права доступа для админа, суперюзера и только для чтения.
-    """
-    message = 'Доступно только администратору'
+class IsAdminOrIsSuperuser(BasePermission):
+    """Права доступа для админа и суперюзера."""
+    message = 'Доступно только администратору!'
 
     def has_permission(self, request, view):
         return (
-            request.method in SAFE_METHODS
-            or request.user.role == UserRole.ADMIN
+            request.user.role == UserRole.ADMIN
             or request.user.is_superuser
         )
 
 
-# пока только не понятно зачем все эти ограничения
-class IsAdmin(BasePermission):
-    """
-    Права доступа только для админа.
-    """
-    def has_permission(self, request, view):
-        result = request.user.is_authenticated and (
-            request.user.is_staff or request.user.role == UserRole.ADMIN)
-        return result
+# class IsModerator(BasePermission):
+#     """Права доступа только для модератора и выше по роли."""
+#     message = 'Доступно только модератору и выше роли!'
 
-
-class IsModerator(BasePermission):
-    """
-    Права доступа только для модератора.
-    """
-    def has_permission(self, request, view):
-        return (request.user.is_authenticated
-                and request.user.role == UserRole.MODERATOR)
-
-
-class IsUser(BasePermission):
-    """
-    Права доступа только для аутентифицированного пользователя.
-    """
-    def has_permission(self, request, view):
-        return (request.user.is_authenticated
-                and request.user.role == UserRole.USER)
-
-
-class IsSuperUser(BasePermission):
-    """
-    Права доступа только для суперпользователя, имеющего все права админа.
-    """
-    def has_permission(self, request, view):
-        return (request.user.is_authenticated
-                and request.user.is_superuser
-                or request.user.role == UserRole.ADMIN)
+#     def has_permission(self, request, view):
+#         return (request.user.is_authenticated
+#                 and request.user.role == UserRole.MODERATOR)
