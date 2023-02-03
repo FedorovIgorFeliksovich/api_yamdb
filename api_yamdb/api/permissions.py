@@ -49,7 +49,7 @@ class IsAdminOrIsSuperuser(BasePermission):
 
 # class IsModerator(BasePermission):
 #     """Права доступа только для модератора и выше по роли."""
-#     message = 'Доступно только модератору и выше роли!'
+#     message = 'Доступно только модератору и выше по роли!'
 
 #     def has_permission(self, request, view):
 #         return (request.user.is_authenticated
