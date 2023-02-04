@@ -172,7 +172,7 @@ class SignUpViewSet(mixins.CreateModelMixin,
 
 
 @api_view(http_method_names=['POST', ])
-@permission_classes([permissions.AllowAny,])
+@permission_classes([permissions.AllowAny, ])
 def access_token(request):
     """Выдает токен доступа для авторизации."""
     serializer = AccessTokenSerializer(data=request.data)
