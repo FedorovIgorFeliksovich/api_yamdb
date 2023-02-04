@@ -6,7 +6,7 @@ from reviews.models import Review, Title, Category, Genre, User
 from .filters import TitleFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import AccessToken
 from .permissions import (
     IsAdminOrIsSuperuserTitleCategoryGenre,
     AuthorOrAdminOrModeratorReviewComment,
@@ -179,7 +179,7 @@ def access_token(request):
     serializer.is_valid(raise_exception=True)
     data = serializer.validated_data
     user = get_object_or_404(User, **data)
-    refresh = RefreshToken.for_user(user)
+    refresh = AccessToken.for_user(user)
     return Response(
         {'access': str(refresh.access_token)}, status=status.HTTP_201_CREATED
     )
