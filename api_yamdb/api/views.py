@@ -156,7 +156,10 @@ class SignUpViewSet(mixins.CreateModelMixin,
             username=request.data.get('username'),
             email=request.data.get('email')
         ).exists():
-            return Response(request.data, status=status.HTTP_200_OK)
+            return Response(
+                request.data,
+                status=status.HTTP_200_OK
+            )
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
