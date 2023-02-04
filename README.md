@@ -38,12 +38,14 @@ python -m pip install -r requirements.txt
 ```
 5. Выполнить миграции:
 ```
-python manage.py makemigrations
+python manage.py makemigrations users
+python manage.py makemigrations reviews
+python manage.py makemigrations api
 python manage.py migrate
 ```
 6. Выполнить загрузку информации в базу данных:
 ```
-python manage.py fill_database
+python manage.py import_csv
 ```
 7. Запустить проект:
 ```

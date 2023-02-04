@@ -28,7 +28,6 @@ class Category(models.Model):
     """Модель категорий произведени."""
     name = models.CharField(
         max_length=256,
-        # задаём значение по умолчанию, т.к. наличие категории обязательно
         default='--Пусто--',
         verbose_name='Наименование категории'
     )
@@ -56,23 +55,19 @@ class Title(models.Model):
     description = models.TextField(
         verbose_name='Описание произведения'
     )
-    # PositiveSmallIntegerField объяснён в Review
     year = models.PositiveSmallIntegerField(
         verbose_name='Год создания произведения'
     )
     category = models.ForeignKey(
         Category,
         on_delete=models.SET_NULL,
-        # может не быть,
         null=True,
-        # но т.к. обязательное поле выше в Category устанавливаем занчение по умолчанию
         blank=True,
         related_name='titles',
         verbose_name='Категория'
     )
     genre = models.ManyToManyField(
         Genre,
-        # связь через(through) GenreToTitle
         through='GenreToTitle',
     )
 
@@ -120,7 +115,7 @@ class Review(models.Model):
         validators=[
             MinValueValidator(1, 'Введите целое число от 1 до 10'),
             MaxValueValidator(10, 'Введите целое число от 1 до 10')
-        ], # Указываю таким образом, что поставленная оценка может быть от 0 до 10
+        ],
     )
 
     class Meta:
@@ -131,8 +126,7 @@ class Review(models.Model):
             models.UniqueConstraint(
                 fields=['title', 'author'],
                 name='unique_review'
-            ), # Накладывает ограничение на БД, что пользователь может
-               # оставить лишь 1 отзыв на 1 произведение.
+            ),
         ]
 
     def __str__(self):
@@ -168,4 +162,5 @@ class Comment(models.Model):
         ordering = ['pub_date']
 
     def __str__(self):
-        return f'Комментарий {self.author.username} на {self.review.title.name}'
+        return f'Комментарий {self.author.username}\
+             на {self.review.title.name}'

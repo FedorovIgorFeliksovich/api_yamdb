@@ -1,7 +1,7 @@
 from rest_framework import viewsets, filters, mixins, permissions, status
 from rest_framework.generics import get_object_or_404
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.decorators import action, api_view
+from rest_framework.decorators import action, api_view, permission_classes
 from reviews.models import Review, Title, Category, Genre, User
 from .filters import TitleFilter
 from django_filters.rest_framework import DjangoFilterBackend
@@ -41,18 +41,10 @@ class TitleViewSet(viewsets.ModelViewSet):
     serializer_class = TitleSerializerCreate
     permission_classes = (IsAdminOrIsSuperuserTitleCategoryGenre,)
     pagination_class = PageNumberPagination
-    # это настройки фильтрации, DjangoFilterBackend из устанавливаемой библиотеки
-    # django-filter. подключение возможно как на уровне INSTALLED_APPS в settings.py
-    # так и на уровне представления(вьюсета)
-    # DjangoFilterBackend поддерживает высоконастраиваемую фильтрацию полей
-    # https://django.fun/ru/docs/django-rest-framework/3.12/api-guide/filtering/
     filter_backends = (DjangoFilterBackend,)
-    # настройка фильтрации для произведений по полям
-    # выносим в отдельный файл и импортируем сюды
     filterset_class = TitleFilter
 
     def get_serializer_class(self):
-        # выбираем сериализацию в зависимости от типа запроса
         if self.request.method in ('POST', 'PATCH', 'DELETE',):
             return TitleSerializerCreate
         return TitleSerializerRead
@@ -63,19 +55,13 @@ class CategoryViewSet(CreateDestroyViewSet):
     queryset = Category.objects.all().order_by('name')
     serializer_class = CategorySerializer
     permission_classes = (IsAdminOrIsSuperuserTitleCategoryGenre,)
-    # Класс SearchFilter поддерживает простой поиск на основе одного параметра запроса
-    # https://django.fun/ru/docs/django-rest-framework/3.12/api-guide/filtering/
     filter_backends = [filters.SearchFilter]
-    # filter_backends будет работать в поле:
     search_fields = ['name']
-    # по сути по умолчанию поиск производиться по id (ну или pk)
-    # но можно указать явно с помощью lookup_field по какому полю производить поиск
     lookup_field = 'slug'
 
 
 class GenreViewSet(CreateDestroyViewSet):
     """Вьюсет для работы  жанрами."""
-    # сразу сортируем по имени для удобства
     queryset = Genre.objects.all().order_by('name')
     serializer_class = GenreSerializer
     permission_classes = (IsAdminOrIsSuperuserTitleCategoryGenre,)
@@ -87,19 +73,13 @@ class GenreViewSet(CreateDestroyViewSet):
 class ReviewViewSet(viewsets.ModelViewSet):
     """Вьюсет для работы с отзывами."""
     serializer_class = ReviewSerializer
-    # Указываем серилизатор с которым будет
-    # работать вьюха
     permission_classes = (AuthorOrAdminOrModeratorReviewComment,)
-    # даю разрешения на основе Permission
-    # авторизованным пользователям, а так же админу, суперпользователю и автору
 
     def get_queryset(self):
-        # динамическое определение доступных запросов
         title = get_object_or_404(Title, id=self.kwargs['title_id'])
         return title.reviews.all()
 
     def perform_create(self, serializer):
-        # Создание объекта
         title = get_object_or_404(Title, id=self.kwargs['title_id'])
         serializer.save(author=self.request.user, title=title)
 
@@ -169,8 +149,17 @@ class SignUpViewSet(mixins.CreateModelMixin,
     """Регистрация нового пользователя. Получение кода подтверждения."""
     queryset = User.objects.all()
     serializer_class = ConfirmationCodeSerializer
+    permission_classes = (permissions.AllowAny,)
 
     def create(self, request, *args, **kwargs):
+        if User.objects.filter(
+            username=request.data.get('username'),
+            email=request.data.get('email')
+        ).exists():
+            return Response(
+                request.data,
+                status=status.HTTP_200_OK
+            )
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
@@ -183,6 +172,7 @@ class SignUpViewSet(mixins.CreateModelMixin,
 
 
 @api_view(http_method_names=['POST', ])
+@permission_classes([permissions.AllowAny,])
 def access_token(request):
     """Выдает токен доступа для авторизации."""
     serializer = AccessTokenSerializer(data=request.data)
