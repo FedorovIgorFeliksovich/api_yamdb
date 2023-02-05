@@ -4,7 +4,6 @@ attrs==22.1.0
 certifi==2022.9.24
 charset-normalizer==2.0.12
 colorama==0.4.5
-python-dotenv==0.21.1
 Django==2.2.16
 django-filter==21.1
 djangorestframework==3.12.4
@@ -27,3 +26,4 @@ toml==0.10.2
 typing_extensions==4.3.0
 urllib3==1.26.12
 zipp==3.8.1
+python-dotenv==0.21.1
