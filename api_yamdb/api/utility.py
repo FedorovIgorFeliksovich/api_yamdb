@@ -9,7 +9,7 @@ def generate_confirmation_code():
 
 def send_email_with_verification_code(data):
     username = data['username']
-    recipients = [data['email'], ]
+    recipients = (data['email'], )
     mailer = 'from@example.com'
     subject = 'Письмо подтверждения'
     confirmation_code = data['confirmation_code']

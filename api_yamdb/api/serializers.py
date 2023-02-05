@@ -1,14 +1,13 @@
+from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db.models import Avg
 from rest_framework import serializers
-from rest_framework.generics import get_object_or_404
 from rest_framework.exceptions import ValidationError
+from rest_framework.generics import get_object_or_404
 from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
-from reviews.models import Review, Comment, Title, Category, Genre, User
-from django.contrib.auth.validators import UnicodeUsernameValidator
-from .utility import (
-    generate_confirmation_code,
-    send_email_with_verification_code
-)
+from reviews.models import Category, Comment, Genre, Review, Title, User
+
+from .utility import (generate_confirmation_code,
+                      send_email_with_verification_code)
 
 
 class GenreSerializer(serializers.ModelSerializer):
@@ -137,8 +136,10 @@ class AdminUserSerializer(serializers.ModelSerializer):
         )
 
     def validate_username(self, value):
-        if value == 'me':
-            raise serializers.ValidationError('А username не может быть "me"')
+        if value in ('me', 'Me', 'mE', 'ME',):
+            raise serializers.ValidationError(
+                f'А username не может быть "{value}"'
+            )
         return value
 
 

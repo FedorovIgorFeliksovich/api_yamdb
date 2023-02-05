@@ -1,13 +1,19 @@
 import os
 from datetime import timedelta
+from dotenv import load_dotenv
+
+load_dotenv()
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'p&l%385148kslhtyn^##a1)ilz@4zqj=rq&agdol^##zgl9(vs'
+dotenv_path = os.path.join(BASE_DIR, '.env')
+
+load_dotenv(dotenv_path)
+
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
@@ -168,3 +174,8 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_LIFETIME': timedelta(days=3),
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=3),
 }
+
+# Пытались исправить вашу ремарку, но получаем
+# django.core.exceptions.AppRegistryNotReady: Apps aren't loaded yet.
+# from django.contrib import admin
+# admin.site.empty_value_display = '-empty-'
