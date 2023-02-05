@@ -55,9 +55,9 @@ class Title(models.Model):
     description = models.TextField(
         verbose_name='Описание произведения'
     )
-    year = models.IntegerField(
+    year = models.PositiveSmallIntegerField(
         verbose_name='Год создания произведения',
-        validators = (validate_year,)
+        validators=(validate_year,)
     )
     category = models.ForeignKey(
         Category,
