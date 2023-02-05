@@ -1,29 +1,21 @@
-from rest_framework import viewsets, filters, mixins, permissions, status
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, mixins, permissions, status, viewsets
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.generics import get_object_or_404
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.decorators import action, api_view, permission_classes
-from reviews.models import Review, Title, Category, Genre, User
-from .filters import TitleFilter
-from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from .permissions import (
-    IsAdminOrIsSuperuserTitleCategoryGenre,
-    AuthorOrAdminOrModeratorReviewComment,
-    IsAdminOrIsSuperuser
-)
-from .serializers import (
-    CategorySerializer,
-    CommentSerializer,
-    ReviewSerializer,
-    GenreSerializer,
-    TitleSerializerRead,
-    TitleSerializerCreate,
-    AdminUserSerializer,
-    UserSerializer,
-    ConfirmationCodeSerializer,
-    AccessTokenSerializer
-)
+from reviews.models import Category, Genre, Review, Title, User
+
+from .filters import TitleFilter
+from .permissions import (AuthorOrAdminOrModeratorReviewComment,
+                          IsAdminOrIsSuperuser,
+                          IsAdminOrIsSuperuserTitleCategoryGenre)
+from .serializers import (AccessTokenSerializer, AdminUserSerializer,
+                          CategorySerializer, CommentSerializer,
+                          ConfirmationCodeSerializer, GenreSerializer,
+                          ReviewSerializer, TitleSerializerCreate,
+                          TitleSerializerRead, UserSerializer)
 
 
 class CreateDestroyViewSet(
@@ -55,8 +47,8 @@ class CategoryViewSet(CreateDestroyViewSet):
     queryset = Category.objects.all().order_by('name')
     serializer_class = CategorySerializer
     permission_classes = (IsAdminOrIsSuperuserTitleCategoryGenre,)
-    filter_backends = [filters.SearchFilter]
-    search_fields = ['name']
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
     lookup_field = 'slug'
 
 
@@ -65,8 +57,8 @@ class GenreViewSet(CreateDestroyViewSet):
     queryset = Genre.objects.all().order_by('name')
     serializer_class = GenreSerializer
     permission_classes = (IsAdminOrIsSuperuserTitleCategoryGenre,)
-    filter_backends = [filters.SearchFilter]
-    search_fields = ['name']
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
     lookup_field = 'slug'
 
 

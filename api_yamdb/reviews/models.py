@@ -1,6 +1,7 @@
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from users.models import User
+from .validators import validate_year
 
 
 class Genre(models.Model):
@@ -10,7 +11,6 @@ class Genre(models.Model):
         verbose_name='Наименование жанра'
     )
     slug = models.SlugField(
-        max_length=50,
         unique=True,
         verbose_name='Slug пути',
         help_text='Введите данные типа Slug',
@@ -55,8 +55,9 @@ class Title(models.Model):
     description = models.TextField(
         verbose_name='Описание произведения'
     )
-    year = models.PositiveSmallIntegerField(
-        verbose_name='Год создания произведения'
+    year = models.IntegerField(
+        verbose_name='Год создания произведения',
+        validators = (validate_year,)
     )
     category = models.ForeignKey(
         Category,
@@ -84,7 +85,11 @@ class GenreToTitle(models.Model):
     title = models.ForeignKey(Title, on_delete=models.CASCADE)
     genre = models.ForeignKey(Genre, on_delete=models.CASCADE)
 
-    def __str__(self):
+    class Meta:
+        verbose_name = 'Жанр произведения'
+        verbose_name_plural = 'Жанры произведения'
+
+    def str(self):
         return f'{self.title}, {self.genre}'
 
 
@@ -112,22 +117,22 @@ class Review(models.Model):
     )
     score = models.PositiveSmallIntegerField(
         verbose_name='Рейтинг',
-        validators=[
+        validators=(
             MinValueValidator(1, 'Введите целое число от 1 до 10'),
             MaxValueValidator(10, 'Введите целое число от 1 до 10')
-        ],
+        ),
     )
 
     class Meta:
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
-        ordering = ['pub_date']
-        constraints = [
+        ordering = ('pub_date',)
+        constraints = (
             models.UniqueConstraint(
-                fields=['title', 'author'],
+                fields=('title', 'author'),
                 name='unique_review'
             ),
-        ]
+        )
 
     def __str__(self):
         return f'Оценка {self.author.username} на {self.title.name}'
@@ -159,7 +164,7 @@ class Comment(models.Model):
     class Meta:
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
-        ordering = ['pub_date']
+        ordering = ('pub_date',)
 
     def __str__(self):
         return f'Комментарий {self.author.username}\
