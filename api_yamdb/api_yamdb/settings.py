@@ -1,5 +1,6 @@
 import os
 from datetime import timedelta
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -15,7 +16,11 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [
+    os.getenv('NAME_HOST'),
+    os.getenv('IPV4_HOST'),
+    os.getenv('IPV6_HOST')
+]
 
 EMAIL = 'confirmation@yambd.com'
 
@@ -175,7 +180,4 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=3),
 }
 
-# Пытались исправить вашу ремарку, но получаем
-# django.core.exceptions.AppRegistryNotReady: Apps aren't loaded yet.
-# from django.contrib import admin
-# admin.site.empty_value_display = '-empty-'
+EMPTY_VALUE_DISPLAY = '-empty-'
